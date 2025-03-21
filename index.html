@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Generador de Link de Compra en Amazon</title>
+  <title>Generador de Link de Carrito Amazon</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -38,7 +38,7 @@
 
   <h1>Generador de Link de Carrito Amazon (Afiliado)</h1>
 
-  <input type="text" id="shortLink" placeholder="Pega aquí tu link de afiliado (ej: https://amzn.to/...)" />
+  <input type="text" id="shortLink" placeholder="Pega aquí tu link de Amazon" />
   <br>
   <button onclick="generarLink()">Generar link</button>
 
@@ -51,51 +51,58 @@
   <p id="mensaje"></p>
 
   <script>
+    function extraerASIN(url) {
+        const asinMatch = url.match(/\/dp\/([A-Z0-9]{10})|\/gp\/product\/([A-Z0-9]{10})/);
+        if (asinMatch) {
+            return asinMatch[1] || asinMatch[2];  // Captura el ASIN correctamente
+        }
+        return null;
+    }
+
     async function generarLink() {
-      const shortUrl = document.getElementById("shortLink").value.trim();
-      const mensaje = document.getElementById("mensaje");
-      const output = document.getElementById("generatedLink");
-      const copyBtn = document.getElementById("copyBtn");
-      const copyMsg = document.getElementById("copyMessage");
+        const shortUrl = document.getElementById("shortLink").value.trim();
+        const mensaje = document.getElementById("mensaje");
+        const output = document.getElementById("generatedLink");
+        const copyBtn = document.getElementById("copyBtn");
+        const copyMsg = document.getElementById("copyMessage");
 
-      mensaje.innerText = "Procesando...";
-      output.value = "";
-      copyBtn.style.display = "none";
-      copyMsg.innerText = "";
+        mensaje.innerText = "Procesando...";
+        output.value = "";
+        copyBtn.style.display = "none";
+        copyMsg.innerText = "";
 
-      if (!shortUrl.startsWith("http")) {
-        mensaje.innerText = "Por favor, ingresa un enlace válido.";
-        return;
-      }
+        let resolvedUrl = shortUrl;
 
-      try {
-        const response = await fetch(shortUrl, { method: 'HEAD', redirect: 'follow' });
-        const finalUrl = response.url;
-
-        const asinMatch = finalUrl.match(/\/([A-Z0-9]{10})(?:[/?]|$)/i);
-        if (!asinMatch) {
-          mensaje.innerText = "No se pudo obtener el ASIN del producto.";
-          return;
+        if (shortUrl.includes("amzn.to")) {
+            try {
+                const response = await fetch(shortUrl, { method: 'HEAD', redirect: 'follow' });
+                resolvedUrl = response.url; // Obtener la URL larga de Amazon
+            } catch (error) {
+                mensaje.innerText = "Error al resolver el enlace corto.";
+                return;
+            }
         }
 
-        const asin = asinMatch[1];
-        const linkFinal = `https://www.amazon.com/gp/aws/cart/add.html?ASIN.1=${asin}&Quantity.1=1&tag=oscar0db-20`;
+        const asin = extraerASIN(resolvedUrl);
 
+        if (!asin) {
+            mensaje.innerText = "No se pudo extraer el ASIN. Verifica el enlace.";
+            return;
+        }
+
+        const linkFinal = `https://www.amazon.com/gp/aws/cart/add.html?ASIN.1=${asin}&Quantity.1=1&tag=oscar0db-20`;
         output.value = linkFinal;
         copyBtn.style.display = "inline-block";
         mensaje.innerText = "Link generado exitosamente.";
-      } catch (error) {
-        mensaje.innerText = "Error al procesar el enlace. Asegúrate de que es válido.";
-      }
     }
 
     function copiarLink() {
-      const output = document.getElementById("generatedLink");
-      const copyMsg = document.getElementById("copyMessage");
-      output.select();
-      output.setSelectionRange(0, 99999); // Para móviles
-      document.execCommand("copy");
-      copyMsg.innerText = "¡Link copiado al portapapeles!";
+        const output = document.getElementById("generatedLink");
+        const copyMsg = document.getElementById("copyMessage");
+        output.select();
+        output.setSelectionRange(0, 99999); // Para móviles
+        document.execCommand("copy");
+        copyMsg.innerText = "¡Link copiado al portapapeles!";
     }
   </script>
 
