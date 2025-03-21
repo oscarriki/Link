@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Generador de Link de Compra en Amazon</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f3f3f3;
+      text-align: center;
+      padding-top: 80px;
+    }
+    input, button {
+      font-size: 16px;
+      padding: 10px;
+      margin: 10px;
+    }
+    input[type="text"] {
+      width: 400px;
+    }
+    #generatedLink {
+      width: 500px;
+    }
+    #copyBtn {
+      display: none;
+      background-color: #25a4ff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    #copyMessage {
+      color: green;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Generador de Link de Carrito Amazon (Afiliado)</h1>
+
+  <input type="text" id="shortLink" placeholder="Pega aquí tu link de afiliado (ej: https://amzn.to/...)" />
+  <br>
+  <button onclick="generarLink()">Generar link</button>
+
+  <br><br>
+  <input type="text" id="generatedLink" readonly placeholder="Tu link aparecerá aquí" />
+  <br>
+  <button id="copyBtn" onclick="copiarLink()">Copiar link</button>
+  <p id="copyMessage"></p>
+
+  <p id="mensaje"></p>
+
+  <script>
+    async function generarLink() {
+      const shortUrl = document.getElementById("shortLink").value.trim();
+      const mensaje = document.getElementById("mensaje");
+      const output = document.getElementById("generatedLink");
+      const copyBtn = document.getElementById("copyBtn");
+      const copyMsg = document.getElementById("copyMessage");
+
+      mensaje.innerText = "Procesando...";
+      output.value = "";
+      copyBtn.style.display = "none";
+      copyMsg.innerText = "";
+
+      if (!shortUrl.startsWith("http")) {
+        mensaje.innerText = "Por favor, ingresa un enlace válido.";
+        return;
+      }
+
+      try {
+        const response = await fetch(shortUrl, { method: 'HEAD', redirect: 'follow' });
+        const finalUrl = response.url;
+
+        const asinMatch = finalUrl.match(/\/([A-Z0-9]{10})(?:[/?]|$)/i);
+        if (!asinMatch) {
+          mensaje.innerText = "No se pudo obtener el ASIN del producto.";
+          return;
+        }
+
+        const asin = asinMatch[1];
+        const linkFinal = `https://www.amazon.com/gp/aws/cart/add.html?ASIN.1=${asin}&Quantity.1=1&tag=oscar0db-20`;
+
+        output.value = linkFinal;
+        copyBtn.style.display = "inline-block";
+        mensaje.innerText = "Link generado exitosamente.";
+      } catch (error) {
+        mensaje.innerText = "Error al procesar el enlace. Asegúrate de que es válido.";
+      }
+    }
+
+    function copiarLink() {
+      const output = document.getElementById("generatedLink");
+      const copyMsg = document.getElementById("copyMessage");
+      output.select();
+      output.setSelectionRange(0, 99999); // Para móviles
+      document.execCommand("copy");
+      copyMsg.innerText = "¡Link copiado al portapapeles!";
+    }
+  </script>
+
+</body>
+</html>
