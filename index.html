@@ -52,57 +52,66 @@
 
   <script>
     function extraerASIN(url) {
-        const asinMatch = url.match(/\/dp\/([A-Z0-9]{10})|\/gp\/product\/([A-Z0-9]{10})/);
-        if (asinMatch) {
-            return asinMatch[1] || asinMatch[2];  // Captura el ASIN correctamente
-        }
-        return null;
+      const asinRegexes = [
+        /\/dp\/([A-Z0-9]{10})/,
+        /\/gp\/product\/([A-Z0-9]{10})/,
+        /\/product\/([A-Z0-9]{10})/,
+        /\/asin\/([A-Z0-9]{10})/,
+        /\/([A-Z0-9]{10})(?:[/?]|$)/ // Último recurso
+      ];
+
+      for (const regex of asinRegexes) {
+        const match = url.match(regex);
+        if (match) return match[1];
+      }
+      return null;
     }
 
     async function generarLink() {
-        const shortUrl = document.getElementById("shortLink").value.trim();
-        const mensaje = document.getElementById("mensaje");
-        const output = document.getElementById("generatedLink");
-        const copyBtn = document.getElementById("copyBtn");
-        const copyMsg = document.getElementById("copyMessage");
+      const shortUrl = document.getElementById("shortLink").value.trim();
+      const mensaje = document.getElementById("mensaje");
+      const output = document.getElementById("generatedLink");
+      const copyBtn = document.getElementById("copyBtn");
+      const copyMsg = document.getElementById("copyMessage");
 
-        mensaje.innerText = "Procesando...";
-        output.value = "";
-        copyBtn.style.display = "none";
-        copyMsg.innerText = "";
+      mensaje.innerText = "Procesando...";
+      output.value = "";
+      copyBtn.style.display = "none";
+      copyMsg.innerText = "";
 
-        let resolvedUrl = shortUrl;
+      let resolvedUrl = shortUrl;
 
-        if (shortUrl.includes("amzn.to")) {
-            try {
-                const response = await fetch(shortUrl, { method: 'HEAD', redirect: 'follow' });
-                resolvedUrl = response.url; // Obtener la URL larga de Amazon
-            } catch (error) {
-                mensaje.innerText = "Error al resolver el enlace corto.";
-                return;
-            }
+      // Si es enlace corto de amzn.to, intentar resolverlo
+      if (shortUrl.includes("amzn.to")) {
+        try {
+          const response = await fetch(shortUrl, { method: 'HEAD', redirect: 'follow' });
+          resolvedUrl = response.url;
+        } catch (error) {
+          mensaje.innerText = "Error al resolver el enlace corto.";
+          return;
         }
+      }
 
-        const asin = extraerASIN(resolvedUrl);
+      const asin = extraerASIN(resolvedUrl);
 
-        if (!asin) {
-            mensaje.innerText = "No se pudo extraer el ASIN. Verifica el enlace.";
-            return;
-        }
+      if (!asin) {
+        mensaje.innerText = "No se pudo extraer el ASIN. Verifica el enlace.";
+        return;
+      }
 
-        const linkFinal = `https://www.amazon.com/gp/aws/cart/add.html?ASIN.1=${asin}&Quantity.1=1&tag=oscar0db-20`;
-        output.value = linkFinal;
-        copyBtn.style.display = "inline-block";
-        mensaje.innerText = "Link generado exitosamente.";
+      const linkFinal = `https://www.amazon.com/gp/aws/cart/add.html?ASIN.1=${asin}&Quantity.1=1&tag=oscar0db-20`;
+      output.value = linkFinal;
+      copyBtn.style.display = "inline-block";
+      mensaje.innerText = "✅ Link generado exitosamente.";
     }
 
     function copiarLink() {
-        const output = document.getElementById("generatedLink");
-        const copyMsg = document.getElementById("copyMessage");
-        output.select();
-        output.setSelectionRange(0, 99999); // Para móviles
-        document.execCommand("copy");
-        copyMsg.innerText = "¡Link copiado al portapapeles!";
+      const output = document.getElementById("generatedLink");
+      const copyMsg = document.getElementById("copyMessage");
+      output.select();
+      output.setSelectionRange(0, 99999); // Para móviles
+      document.execCommand("copy");
+      copyMsg.innerText = "✅ ¡Link copiado al portapapeles!";
     }
   </script>
 
